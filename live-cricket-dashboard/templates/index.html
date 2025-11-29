@@ -1,0 +1,114 @@
+<!--
+CHANGELOG:
+- Added a sticky 'glassmorphism' navbar with a theme switcher.
+- Implemented skeleton loading cards that display while data is fetched.
+- Separated backend data from the initial view by using a <template> tag, which is then processed by JavaScript.
+- Redesigned match cards with a modern layout including team logos, score, and status badges.
+- Ensured the page is responsive and works on mobile devices.
+-->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Cricket Dashboard</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <!-- Main Script with defer -->
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+</head>
+<body>
+
+    <!-- 
+        Sticky Navbar: Implements glassmorphism. It stays at the top on scroll.
+        Contains the main branding, a live indicator, and the dark mode toggle.
+    -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <div class="live-indicator"></div>
+                <h1>Live Cricket Dashboard</h1>
+            </div>
+            <div class="theme-switcher">
+                <input type="checkbox" id="theme-toggle" class="theme-toggle-checkbox">
+                <label for="theme-toggle" class="theme-toggle-label"></label>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 
+        Main Dashboard Container: Uses a grid layout for responsiveness.
+        This is where match cards or skeleton loaders will be displayed.
+    -->
+    <main class="dashboard-container" id="dashboard-container">
+        
+        <!-- 
+            Skeleton Loader: Displayed by default on page load.
+            JavaScript will remove this and inject the actual score cards.
+            The shimmer animation provides a modern loading feel.
+        -->
+        {% for i in range(6) %}
+        <div class="skeleton-card">
+            <div class="skeleton-header">
+                <div class="skeleton-logo"></div>
+                <div class="skeleton-text"></div>
+                <div class="skeleton-logo"></div>
+            </div>
+            <div class="skeleton-score"></div>
+            <div class="skeleton-footer">
+                <div class="skeleton-badge"></div>
+                <div class="skeleton-badge"></div>
+            </div>
+        </div>
+        {% endfor %}
+
+    </main>
+
+    <!-- 
+        Jinja2 Template for Scores: The backend renders the actual score data here.
+        It's hidden by default. JavaScript reads from this template to build the
+        live score cards, allowing us to show the skeleton loader first.
+    -->
+    <template id="scores-template">
+        {% for score in scores %}
+            {% set parts = score.title.split(':', 1) %}
+            {% set teams_part = parts[0] %}
+            {% set score_part = parts[1] | default('') %}
+            {% set teams = teams_part.split(' v ') %}
+            {% set team1 = teams[0] | trim %}
+            {% set team2 = teams[1] | default('TBC') | trim %}
+
+            <div class="match-card">
+                <div class="card-header">
+                    <div class="team">
+                        <div class="team-logo" data-initial="{{ team1[0] }}"></div>
+                        <span class="team-name">{{ team1 }}</span>
+                    </div>
+                    <div class="team">
+                        <span class="team-name">{{ team2 }}</span>
+                        <div class="team-logo" data-initial="{{ team2[0] }}"></div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="score">{{ score_part.split(',')[0] | trim }}</div>
+                </div>
+                <div class="card-footer">
+                    {% set status_parts = score_part.split(',', 1) %}
+                    {% if status_parts | length > 1 %}
+                    <span class="badge status-badge">{{ status_parts[1] | trim }}</span>
+                    {% endif %}
+                    <a href="{{ score.link }}" target="_blank" class="badge link-badge">Match Details</a>
+                </div>
+            </div>
+        {% endfor %}
+    </template>
+
+</body>
+</html>
